@@ -15,31 +15,53 @@ db.serialize(() => {
 });
 
 app.post("/cats", (req, res) => {
-  const name = req.body.name;
-  db.run(
-    `INSERT INTO cats (name, votes) VALUES (?, 0)`,[name],
-    function (err) {
-      if (err) {
-        res.status(500).send("Erro ao inserir no banco de dados");
-      } else {
-        res.status(201).json({ id: this.lastID, name, votes: 0 });
-      }
+  try {
+    const name = req.body.name;
+    if (!name) {
+      throw new Error("Nome inválido");
     }
-  );
+
+    db.run(
+      `INSERT INTO cats (name, votes) VALUES (?, 0)`,
+      [name],
+      function (err) {
+        if (err) {
+          throw err;
+        } else {
+          res.status(201).json({ id: this.lastID, name, votes: 0 });
+        }
+      }
+    );
+  } catch (error) {
+    const errorMessage =
+      error.message === undefined ? "Erro desconhecido" : error.message;
+    res.status(500).send(errorMessage);
+  }
 });
 
 app.post("/dogs", (req, res) => {
-  const name = req.body.name;
-  db.run(
-    `INSERT INTO dogs (name, votes) VALUES (?, 0)`, [name],
-    function (err) {
-      if (err) {
-        res.status(500).send("Erro ao inserir no banco de dados");
-      } else {
-        res.status(201).json({ id: this.lastID, name, votes: 0 });
-      }
+  try {
+    const name = req.body.name;
+    if (!name) {
+      throw new Error("Nome inválido");
     }
-  );
+
+    db.run(
+      `INSERT INTO dogs (name, votes) VALUES (?, 0)`,
+      [name],
+      function (err) {
+        if (err) {
+          throw err;
+        } else {
+          res.status(201).json({ id: this.lastID, name, votes: 0 });
+        }
+      }
+    );
+  } catch (error) {
+    const errorMessage =
+      error.message === undefined ? "Erro desconhecido" : error.message;
+    res.status(500).send(errorMessage);
+  }
 });
 
 app.post("/vote/:animalType/:id", (req, res) => {
@@ -68,28 +90,42 @@ app.post("/vote/:animalType/:id", (req, res) => {
       }
     );
   } catch (error) {
-    handleError(error, res);
+    const errorMessage =
+      error.message === undefined ? "Erro desconhecido" : error.message;
+    res.status(500).send(errorMessage);
   }
 });
 
 app.get("/cats", (req, res) => {
-  db.all("SELECT * FROM cats", [], (err, rows) => {
-    if (err) {
-      res.status(500).send("Erro ao consultar o banco de dados");
-    } else {
-      res.json(rows);
-    }
-  });
+  try {
+    db.all("SELECT * FROM cats", [], (err, rows) => {
+      if (err) {
+        throw err;
+      } else {
+        res.json(rows);
+      }
+    });
+  } catch (error) {
+    const errorMessage =
+      error.message === undefined ? "Erro desconhecido" : error.message;
+    res.status(500).send(errorMessage);
+  }
 });
 
 app.get("/dogs", (req, res) => {
-  db.all("SELECT * FROM dogs", [], (err, rows) => {
-    if (err) {
-      res.status(500).send("Erro ao consultar o banco de dados");
-    } else {
-      res.json(rows);
-    }
-  });
+  try {
+    db.all("SELECT * FROM dogs", [], (err, rows) => {
+      if (err) {
+        throw err;
+      } else {
+        res.json(rows);
+      }
+    });
+  } catch (error) {
+    const errorMessage =
+      error.message === undefined ? "Erro desconhecido" : error.message;
+    res.status(500).send(errorMessage);
+  }
 });
 
 app.use((err, req, res, next) => {
