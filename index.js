@@ -10,14 +10,14 @@ app.use(bodyParser.json());
 const db = new sqlite3.Database(":memory:");
 
 db.serialize(() => {
-  db.run("CREATE TABLE cats (id INT , name TEXT, votes INT)");
-  db.run("CREATE TABLE dogs (id INT, name TEXT, votes INT)");
+  db.run("CREATE TABLE cats (id INTEGER PRIMARY KEY, name TEXT, votes INT)");
+  db.run("CREATE TABLE dogs (id INTEGER PRIMARY KEY, name TEXT, votes INT)");
 });
 
 app.post("/cats", (req, res) => {
   const name = req.body.name;
   db.run(
-    `INSERT INTO cats (name, votes) VALUES ('${name}', 0)`,
+    `INSERT INTO cats (name, votes) VALUES (?, 0)`,[name],
     function (err) {
       if (err) {
         res.status(500).send("Erro ao inserir no banco de dados");
@@ -31,7 +31,7 @@ app.post("/cats", (req, res) => {
 app.post("/dogs", (req, res) => {
   const name = req.body.name;
   db.run(
-    `INSERT INTO dogs (name, votes) VALUES ('${name}', 0)`,
+    `INSERT INTO dogs (name, votes) VALUES (?, 0)`, [name],
     function (err) {
       if (err) {
         res.status(500).send("Erro ao inserir no banco de dados");
@@ -43,18 +43,32 @@ app.post("/dogs", (req, res) => {
 });
 
 app.post("/vote/:animalType/:id", (req, res) => {
-  const { animalType, id } = req.params;
-  if (animalType == "cats" || animalType == "dogs") {
-    db.run(
-      `UPDATE ${animalType} SET votes = votes + 1 WHERE id = ${id}`,
+  try {
+    const { animalType, id } = req.params;
+    if (animalType !== "cats" && animalType !== "dogs") {
+      throw new Error("Tipo de animal inválido");
+    }
+
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
+      throw new Error("ID inválido");
+    }
+
+    const result = db.run(
+      `UPDATE ${animalType} SET votes = votes + 1 WHERE id = ?`,
+      [parsedId],
       function (err) {
         if (err) {
-          res.status(500).send("Erro atualizar voto no banco de dados");
+          throw err;
+        } else if (this.changes === 0) {
+          throw new Error("Registro não encontrado");
         } else {
-          res.status(200).send("peguei seu voto!");
+          res.status(200).send("Voto computado!");
         }
       }
     );
+  } catch (error) {
+    handleError(error, res);
   }
 });
 
